@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant Overlay</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="overlay-container">
+        <!-- Main Container -->
+        <div class="main-container" id="mainContainer">
+            <!-- Close Button -->
+            <button class="close-button" id="closeButton">×</button>
+            
+            <!-- Glowing border effect -->
+            <div class="glow-border"></div>
+
+            <div class="content-wrapper">
+                <!-- Animated Energy Orb -->
+                <div class="energy-orb-container">
+                    <div class="energy-orb" id="energyOrb">
+                        <!-- Inner core -->
+                        <div class="inner-core"></div>
+                        
+                        <!-- Morphing particles -->
+                        <div class="particles-container">
+                            <div class="particle" style="--delay: 0s; --angle: 0deg;"></div>
+                            <div class="particle" style="--delay: 0.2s; --angle: 60deg;"></div>
+                            <div class="particle" style="--delay: 0.4s; --angle: 120deg;"></div>
+                            <div class="particle" style="--delay: 0.6s; --angle: 180deg;"></div>
+                            <div class="particle" style="--delay: 0.8s; --angle: 240deg;"></div>
+                            <div class="particle" style="--delay: 1s; --angle: 300deg;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Information -->
+                <div class="info-panel">
+                    <!-- Agent Type -->
+                    <div class="agent-info">
+                        <span class="label">Agent:</span> 
+                        <span class="agent-type" id="agentType">Create</span>
+                    </div>
+
+                    <!-- Task Description -->
+                    <div class="task-info">
+                        <span class="status-label" id="statusLabel">Executing:</span>
+                        <span class="task-description" id="taskDescription">initializing</span>
+                    </div>
+
+                    <!-- Progress Indicator -->
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span>Step</span>
+                            <span class="progress-counter" id="progressCounter">0/3</span>
+                        </div>
+                        <div class="progress-bars" id="progressBars">
+                            <!-- Progress bars will be dynamically generated -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Corner accent lines -->
+            <div class="corner-accent top-left"></div>
+            <div class="corner-accent top-right"></div>
+            <div class="corner-accent bottom-left"></div>
+            <div class="corner-accent bottom-right"></div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html> 
