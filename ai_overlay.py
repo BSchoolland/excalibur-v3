@@ -53,9 +53,12 @@ class AIOverlay:
         self.command_watcher_thread = None
         self.stop_watching = False
         
+        # Electron app path
+        self.electron_app_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "electron_app")
+        print(f"Electron app path: {self.electron_app_path}")
         # File paths
-        self.state_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "overlay_state.json")
-        self.command_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "overlay_commands.json")
+        self.state_file = os.path.join(self.electron_app_path, "overlay_state.json")
+        self.command_file = os.path.join(self.electron_app_path, "overlay_commands.json")
         
         # Event handlers
         self.on_close_requested = None
@@ -67,7 +70,7 @@ class AIOverlay:
             "totalSteps": 3,
             "isComplete": False,
             "isActive": True,
-            "isVisible": True
+            "isVisible": False
         }
         # Initialize state file
         self._write_state_file()
@@ -82,7 +85,7 @@ class AIOverlay:
             # Start electron in the background
             self.electron_process = subprocess.Popen(
                 ["npm", "start"],
-                cwd=os.path.dirname(os.path.abspath(__file__)),
+                cwd=self.electron_app_path,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
@@ -92,7 +95,6 @@ class AIOverlay:
             self._start_command_watcher()
             
             # Give it time to start
-            time.sleep(3)
             print("✓ AI Overlay started successfully")
             
         except Exception as e:
@@ -183,12 +185,14 @@ class AIOverlay:
             "isActive": False
         })
         self._send_update()
-        print(f"✅ Task completed: {self.current_state['agentType']}")
+        print(f"Task completed: {self.current_state['agentType']}")
     
     def hide(self) -> None:
         """Hide the overlay (slide out)"""
         self.current_state["isVisible"] = False
         self._send_update()
+        time.sleep(0.1) # allow time for the overlay to be hidden
+
     
     def show(self) -> None:
         """Show the overlay (slide in)"""
@@ -278,48 +282,6 @@ class AIOverlay:
             
         except Exception as e:
             print(f"Error processing command: {e}")
-    
-    def run_demo_sequence(self) -> None:
-        """Run a demonstration sequence showing different tasks"""
-        demo_tasks = [
-            Task("Create", "creating plan", [
-                TaskStep("analyzing requirements", 2.0),
-                TaskStep("generating structure", 1.5),
-                TaskStep("finalizing design", 1.0)
-            ]),
-            Task("Install", "installing deps", [
-                TaskStep("fetching packages", 3.0),
-                TaskStep("resolving dependencies", 2.0),
-                TaskStep("installing modules", 2.5)
-            ]),
-            Task("Code", "writing code", [
-                TaskStep("generating components", 4.0),
-                TaskStep("implementing logic", 3.5),
-                TaskStep("adding tests", 2.0)
-            ]),
-            Task("Execute", "running program", [
-                TaskStep("compiling source", 2.0),
-                TaskStep("starting server", 1.5),
-                TaskStep("verifying output", 1.0)
-            ])
-        ]
-        
-        for task in demo_tasks:
-            self.show_task(task.agent_type, task.task_name, len(task.steps))
-            time.sleep(1)
-            
-            for i, step in enumerate(task.steps, 1):
-                self.update_step(i, step.name)
-                time.sleep(step.duration)
-            
-            self.complete_task()
-            time.sleep(2)
-            
-            # Hide briefly between tasks
-            self.hide()
-            time.sleep(0.5)
-            self.show()
-            time.sleep(0.5)
 
 def create_overlay() -> AIOverlay:
     """Convenience function to create an AIOverlay instance"""
@@ -332,7 +294,7 @@ if __name__ == "__main__":
     
     # Set up close handler
     def handle_close():
-        print("🚫 User requested close - stopping demo...")
+        print("User requested close - stopping demo...")
         overlay.stop()
         exit(0)
     
@@ -358,11 +320,8 @@ if __name__ == "__main__":
         time.sleep(2)
         
         overlay.complete_task()
-        time.sleep(3)
-        
-        # Run the full demo
-        print("\n🎬 Running demo sequence...")
-        overlay.run_demo_sequence()
+        time.sleep(1)
+        overlay.hide()        
         
     except KeyboardInterrupt:
         print("\n�� Demo interrupted")

@@ -26,6 +26,7 @@ def main():
     try:
         # Start the Electron app
         overlay.start()
+        time.sleep(3)
         
         print("\n📋 Example 1: Dynamic progress bars (4 steps)")
         # Show a task with 4 steps to test dynamic progress bars
@@ -74,7 +75,7 @@ def main():
             
             # Brief hide/show between tasks
             overlay.hide()
-            time.sleep(3)
+            time.sleep(30)
             overlay.show()
             time.sleep(0.3)
         
@@ -101,9 +102,7 @@ def main():
         
         overlay.complete_task()
         time.sleep(2)
-        
-        print("\n🎬 Running full demo sequence...")
-        overlay.run_demo_sequence()
+    
         
     except KeyboardInterrupt:
         print("\n👋 Demo interrupted by user")

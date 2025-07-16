@@ -44,11 +44,36 @@ class AIOverlay {
         this.startPulseAnimation();
     }
 
+    // Sound effect functions
+    playTaskStartSound() {
+        zzfx(...[.1,,222,.01,.17,.27,1,2.3,-3,,377,.05,.01,,,,,.99,.28,.43,-774]);
+    }
+
+    playTaskCompleteSound() {
+        zzfx(...[.1,0,635,.02,.06,.3,1,1.9,,,203,.06,.03,,,,,.81,.05]);
+    }
+
     updateState(newState) {
-        // Update internal state
+        const wasComplete = this.state.isComplete;
+        const oldTaskName = this.state.taskName;
+        const oldCurrentStep = this.state.currentStep;
+        
+        // Update state
         Object.assign(this.state, newState);
 
-        // Update UI elements
+        // Play sounds based on state changes
+        if (!wasComplete && this.state.isComplete) {
+            // Task just completed
+            this.playTaskCompleteSound();
+        } else if (
+            this.state.currentStep === 0 && 
+            this.state.taskName !== 'initializing' &&
+            (oldTaskName !== this.state.taskName || wasComplete || oldTaskName === 'initializing')
+        ) {
+            // New task started: either task name changed, or we were completed, or coming from initial state
+            this.playTaskStartSound();
+        }
+
         this.updateUI();
     }
 
@@ -118,14 +143,25 @@ class AIOverlay {
     updateEnergyOrb() {
         const { isActive, isComplete } = this.state;
         
-        this.elements.energyOrb.classList.toggle('active', isActive);
-        this.elements.energyOrb.classList.toggle('complete', isComplete);
+        if (isComplete) {
+            this.elements.energyOrb.classList.add('complete');
+            this.elements.energyOrb.classList.remove('active');
+        } else if (isActive) {
+            this.elements.energyOrb.classList.add('active');
+            this.elements.energyOrb.classList.remove('complete');
+        } else {
+            this.elements.energyOrb.classList.remove('active', 'complete');
+        }
     }
 
     updateVisibility() {
         const { isVisible } = this.state;
         
-        this.elements.mainContainer.classList.toggle('slide-out', !isVisible);
+        if (isVisible) {
+            this.elements.mainContainer.classList.remove('slide-out');
+        } else {
+            this.elements.mainContainer.classList.add('slide-out');
+        }
     }
 
     startPulseAnimation() {
@@ -177,9 +213,9 @@ class AIOverlay {
     }
 }
 
-// Initialize when DOM is ready
+// Initialize the overlay when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.aiOverlay = new AIOverlay();
+    new AIOverlay();
 });
 
 // Helper function for testing - can be removed in production
