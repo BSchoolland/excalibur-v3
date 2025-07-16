@@ -62,6 +62,9 @@ class AIOverlay:
         
         # Event handlers
         self.on_close_requested = None
+        self.on_text_input_received = None
+        self._input_response = None
+        self._waiting_for_input = False
         
         self.current_state = {
             "agentType": "Create",
@@ -70,7 +73,9 @@ class AIOverlay:
             "totalSteps": 3,
             "isComplete": False,
             "isActive": True,
-            "isVisible": False
+            "isVisible": False,
+            "isWaitingForInput": False,
+            "inputPrompt": ""
         }
         # Initialize state file
         self._write_state_file()
@@ -110,7 +115,7 @@ class AIOverlay:
         
         # Stop command watcher
         self._stop_command_watcher()
-        
+        self.hide()
         if self.electron_process:
             self.electron_process.terminate()
             try:
@@ -141,6 +146,60 @@ class AIOverlay:
         """
         self.on_close_requested = handler
     
+    def set_text_input_handler(self, handler: Callable[[str], None]) -> None:
+        """
+        Set a handler function that will be called when the user submits text input
+        
+        Args:
+            handler: Function to call with the user's input text
+        """
+        self.on_text_input_received = handler
+    
+    def request_text_input(self, prompt: str = "enter your task") -> str:
+        """
+        Request text input from the user and wait for response
+        
+        Args:
+            prompt: The prompt to show to the user
+            
+        Returns:
+            The text the user entered
+        """
+        print(f"💬 Requesting text input: {prompt}")
+        
+        # Set up input state
+        self._input_response = None
+        self._waiting_for_input = True
+        
+        self.current_state.update({
+            "isWaitingForInput": True,
+            "inputPrompt": prompt,
+            "isVisible": True,
+            "isActive": True,
+            "agentType": "Excalibur",
+            "taskName": prompt,
+            "currentStep": 0,
+            "totalSteps": 1,
+            "isComplete": False
+        })
+        self._send_update()
+        
+        # Wait for response
+        while self._waiting_for_input and self.is_running:
+            time.sleep(0.1)
+        
+        result = self._input_response or ""
+        print(f"📝 User input received: '{result}'")
+        
+        # Reset input state
+        self.current_state.update({
+            "isWaitingForInput": False,
+            "inputPrompt": ""
+        })
+        self._send_update()
+        
+        return result
+    
     def show_task(self, agent_type: str, task_name: str, total_steps: int = 3) -> None:
         """
         Start showing a new task
@@ -157,7 +216,8 @@ class AIOverlay:
             "totalSteps": total_steps,
             "isComplete": False,
             "isActive": True,
-            "isVisible": True
+            "isVisible": True,
+            "isWaitingForInput": False
         })
         self._send_update()
         print(f"📋 Started task: {agent_type} - {task_name} ({total_steps} steps)")
@@ -173,7 +233,8 @@ class AIOverlay:
         self.current_state.update({
             "currentStep": step_number,
             "taskName": step_name,
-            "isComplete": False
+            "isComplete": False,
+            "isWaitingForInput": False
         })
         self._send_update()
         print(f"  🔄 Step {step_number}/{self.current_state['totalSteps']}: {step_name}")
@@ -182,7 +243,8 @@ class AIOverlay:
         """Mark the current task as complete"""
         self.current_state.update({
             "isComplete": True,
-            "isActive": False
+            "isActive": False,
+            "isWaitingForInput": False
         })
         self._send_update()
         print(f"Task completed: {self.current_state['agentType']}")
@@ -240,7 +302,7 @@ class AIOverlay:
     def _stop_command_watcher(self) -> None:
         """Stop watching for commands from the UI"""
         self.stop_watching = True
-        if self.command_watcher_thread:
+        if self.command_watcher_thread and self.command_watcher_thread != threading.current_thread():
             self.command_watcher_thread.join(timeout=1)
     
     def _watch_commands(self) -> None:
@@ -277,6 +339,16 @@ class AIOverlay:
                     self.hide()
                     print("🚫 Close button clicked - overlay hidden")
             
+            elif action == 'text_input':
+                input_text = command.get('text', '')
+                self._input_response = input_text
+                self._waiting_for_input = False
+                
+                if self.on_text_input_received:
+                    self.on_text_input_received(input_text)
+                
+                print(f"📝 Text input received: '{input_text}'")
+            
             # Clean up command file
             os.remove(self.command_file)
             
@@ -289,7 +361,7 @@ def create_overlay() -> AIOverlay:
 
 # Example usage
 if __name__ == "__main__":
-    # Example with close handler
+    # Example with text input
     overlay = create_overlay()
     
     # Set up close handler
@@ -303,27 +375,32 @@ if __name__ == "__main__":
     try:
         overlay.start()
         
-        # Show a simple task
-        overlay.show_task("Create", "building application", 4)
-        time.sleep(1)
+        # Request user input
+        user_task = overlay.request_text_input("Enter task")
         
-        overlay.update_step(1, "analyzing requirements")
-        time.sleep(2)
+        if user_task:
+            # Show a task based on user input
+            overlay.show_task("Create", f"building {user_task}", 4)
+            time.sleep(1)
+            
+            overlay.update_step(1, "analyzing requirements")
+            time.sleep(2)
+            
+            overlay.update_step(2, "generating code") 
+            time.sleep(2)
+            
+            overlay.update_step(3, "testing application")
+            time.sleep(2)
+            
+            overlay.update_step(4, "deploying to server")
+            time.sleep(2)
+            
+            overlay.complete_task()
+            time.sleep(1)
         
-        overlay.update_step(2, "generating code") 
-        time.sleep(2)
-        
-        overlay.update_step(3, "testing application")
-        time.sleep(2)
-        
-        overlay.update_step(4, "deploying to server")
-        time.sleep(2)
-        
-        overlay.complete_task()
-        time.sleep(1)
         overlay.hide()        
         
     except KeyboardInterrupt:
-        print("\n�� Demo interrupted")
+        print("\n🔄 Demo interrupted")
     finally:
         overlay.stop() 

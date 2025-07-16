@@ -44,6 +44,24 @@ function createWindow() {
   }
 }
 
+function adjustWindowForInputMode(isInputMode) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  
+  const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  
+  if (isInputMode) {
+    // Expand window for input mode
+    mainWindow.setSize(400, 180);
+    mainWindow.setPosition(width - 420, height - 200);
+  } else {
+    // Normal size
+    mainWindow.setSize(400, 140);
+    mainWindow.setPosition(width - 420, height - 160);
+  }
+}
+
 function startStateFileWatcher() {
   const stateFilePath = path.join(__dirname, 'overlay_state.json');
   
@@ -54,6 +72,9 @@ function startStateFileWatcher() {
         if (fs.existsSync(stateFilePath)) {
           const stateData = fs.readFileSync(stateFilePath, 'utf8');
           const state = JSON.parse(stateData);
+          
+          // Adjust window size based on input mode
+          adjustWindowForInputMode(state.isWaitingForInput);
           
           // Send update to renderer
           if (mainWindow && !mainWindow.isDestroyed()) {
@@ -76,6 +97,7 @@ function startStateFileWatcher() {
         // Wait a moment for renderer to be ready, then send initial state
         setTimeout(() => {
           if (mainWindow && !mainWindow.isDestroyed()) {
+            adjustWindowForInputMode(state.isWaitingForInput);
             mainWindow.webContents.send('status-update', state);
           }
         }, 1000);

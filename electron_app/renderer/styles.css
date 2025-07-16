@@ -45,6 +45,11 @@ body {
     max-width: calc(100vw - 48px); /* Ensure it fits within viewport with padding */
 }
 
+/* Expanded height for input mode */
+.main-container.input-mode {
+    height: 160px;
+}
+
 .main-container.slide-out {
     transform: translateX(100%);
     opacity: 0;
@@ -95,6 +100,14 @@ body {
     z-index: -1;
 }
 
+/* Input mode glow effect */
+.main-container.input-mode .glow-border {
+    background: linear-gradient(90deg, 
+        rgba(251, 191, 36, 0.2) 0%, 
+        rgba(249, 115, 22, 0.2) 50%, 
+        rgba(251, 191, 36, 0.2) 100%);
+}
+
 .content-wrapper {
     display: flex;
     align-items: center;
@@ -116,6 +129,14 @@ body {
     position: relative;
     transition: all 0.3s ease;
     animation: pulse 2s infinite;
+}
+
+/* Input mode orb styling */
+.energy-orb.input-mode {
+    background: linear-gradient(45deg, #fbbf24, #f97316);
+    box-shadow: 
+        0 0 30px rgba(251, 191, 36, 0.6),
+        0 0 60px rgba(249, 115, 22, 0.4);
 }
 
 .energy-orb.active {
@@ -179,6 +200,10 @@ body {
     background: #86efac;
 }
 
+.energy-orb.input-mode .particle {
+    background: #fde047;
+}
+
 /* Info Panel */
 .info-panel {
     flex: 1;
@@ -213,6 +238,11 @@ body {
     color: #06b6d4;
 }
 
+/* Input mode status label styling */
+.status-label.input-mode {
+    color: #fbbf24;
+}
+
 .task-description {
     color: white;
     transition: all 0.5s ease;
@@ -220,6 +250,49 @@ body {
 
 .task-description.complete {
     color: #86efac;
+}
+
+/* Text Input Form */
+.input-form {
+    margin: 4px 0;
+    transition: all 0.3s ease;
+}
+
+.input-form.hidden {
+    display: none;
+}
+
+.text-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(6, 182, 212, 0.5);
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    color: white;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.text-input::placeholder {
+    color: #9ca3af;
+}
+
+.text-input:focus {
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.5);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+/* Input mode text input styling */
+.input-form.input-mode .text-input {
+    border-color: rgba(251, 191, 36, 0.5);
+}
+
+.input-form.input-mode .text-input:focus {
+    border-color: #fbbf24;
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.5);
 }
 
 /* Progress Section */
@@ -302,6 +375,32 @@ body {
     border-right: 2px solid rgba(6, 182, 212, 0.6);
     border-bottom: 2px solid rgba(6, 182, 212, 0.6);
     border-bottom-right-radius: 8px;
+}
+
+/* Input mode corner accent styling */
+.main-container.input-mode .corner-accent.top-left {
+    border-left-color: rgba(251, 191, 36, 0.6);
+    border-top-color: rgba(251, 191, 36, 0.6);
+}
+
+.main-container.input-mode .corner-accent.top-right {
+    border-right-color: rgba(249, 115, 22, 0.6);
+    border-top-color: rgba(249, 115, 22, 0.6);
+}
+
+.main-container.input-mode .corner-accent.bottom-left {
+    border-left-color: rgba(249, 115, 22, 0.6);
+    border-bottom-color: rgba(249, 115, 22, 0.6);
+}
+
+.main-container.input-mode .corner-accent.bottom-right {
+    border-right-color: rgba(251, 191, 36, 0.6);
+    border-bottom-color: rgba(251, 191, 36, 0.6);
+}
+
+/* Utility classes */
+.hidden {
+    display: none;
 }
 
 /* Animations */

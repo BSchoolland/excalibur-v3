@@ -43,11 +43,23 @@
                         <span class="agent-type" id="agentType">Create</span>
                     </div>
 
-                    <!-- Task Description -->
-                    <div class="task-info">
+                    <!-- Task Description or Input -->
+                    <div class="task-info" id="taskInfo">
                         <span class="status-label" id="statusLabel">Executing:</span>
                         <span class="task-description" id="taskDescription">initializing</span>
                     </div>
+
+                    <!-- Text Input Form (hidden by default) -->
+                    <form class="input-form hidden" id="inputForm">
+                        <input 
+                            type="text" 
+                            id="textInput"
+                            class="text-input"
+                            placeholder=""
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                    </form>
 
                     <!-- Progress Indicator -->
                     <div class="progress-section">

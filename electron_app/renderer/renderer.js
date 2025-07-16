@@ -12,7 +12,10 @@ class AIOverlay {
             taskDescription: document.getElementById('taskDescription'),
             progressCounter: document.getElementById('progressCounter'),
             progressBars: document.getElementById('progressBars'),
-            closeButton: document.getElementById('closeButton')
+            closeButton: document.getElementById('closeButton'),
+            taskInfo: document.getElementById('taskInfo'),
+            inputForm: document.getElementById('inputForm'),
+            textInput: document.getElementById('textInput')
         };
 
         this.state = {
@@ -22,7 +25,9 @@ class AIOverlay {
             currentStep: 0,
             totalSteps: 3,
             agentType: 'Create',
-            taskName: 'initializing'
+            taskName: 'initializing',
+            isWaitingForInput: false,
+            inputPrompt: ''
         };
 
         this.commandFile = path.join(__dirname, '..', 'overlay_commands.json');
@@ -40,23 +45,26 @@ class AIOverlay {
             this.sendCloseCommand();
         });
 
+        // Set up input form
+        this.elements.inputForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleTextInput();
+        });
+
+        // Auto-focus input when it becomes visible
+        this.elements.textInput.addEventListener('focus', () => {
+            this.elements.textInput.select();
+        });
+
         // Start with some basic animations
         this.startPulseAnimation();
-    }
-
-    // Sound effect functions
-    playTaskStartSound() {
-        zzfx(...[.1,,222,.01,.17,.27,1,2.3,-3,,377,.05,.01,,,,,.99,.28,.43,-774]);
-    }
-
-    playTaskCompleteSound() {
-        zzfx(...[.1,0,635,.02,.06,.3,1,1.9,,,203,.06,.03,,,,,.81,.05]);
     }
 
     updateState(newState) {
         const wasComplete = this.state.isComplete;
         const oldTaskName = this.state.taskName;
         const oldCurrentStep = this.state.currentStep;
+        const wasWaitingForInput = this.state.isWaitingForInput;
         
         // Update state
         Object.assign(this.state, newState);
@@ -74,7 +82,99 @@ class AIOverlay {
             this.playTaskStartSound();
         }
 
+        // Handle input mode transition
+        if (!wasWaitingForInput && this.state.isWaitingForInput) {
+            this.enterInputMode();
+        } else if (wasWaitingForInput && !this.state.isWaitingForInput) {
+            this.exitInputMode();
+        }
+
         this.updateUI();
+    }
+
+    enterInputMode() {
+        console.log('Entering input mode');
+        
+        // Add input mode classes
+        this.elements.mainContainer.classList.add('input-mode');
+        this.elements.energyOrb.classList.add('input-mode');
+        this.elements.statusLabel.classList.add('input-mode');
+        this.elements.inputForm.classList.add('input-mode');
+        
+        // Show input form, hide task info
+        this.elements.inputForm.classList.remove('hidden');
+        this.elements.taskInfo.classList.add('hidden');
+        
+        // Set placeholder and focus
+        if (this.state.inputPrompt) {
+            this.elements.textInput.placeholder = this.state.inputPrompt;
+        }
+        
+        // Focus with a slight delay to ensure visibility
+        setTimeout(() => {
+            this.elements.textInput.focus();
+        }, 100);
+    }
+
+    exitInputMode() {
+        console.log('Exiting input mode');
+        
+        // Remove input mode classes
+        this.elements.mainContainer.classList.remove('input-mode');
+        this.elements.energyOrb.classList.remove('input-mode');
+        this.elements.statusLabel.classList.remove('input-mode');
+        this.elements.inputForm.classList.remove('input-mode');
+        
+        // Hide input form, show task info
+        this.elements.inputForm.classList.add('hidden');
+        this.elements.taskInfo.classList.remove('hidden');
+        
+        // Clear input
+        this.elements.textInput.value = '';
+    }
+
+    handleTextInput() {
+        const inputText = this.elements.textInput.value.trim();
+        
+        if (!inputText) {
+            // Flash input border if empty
+            this.elements.textInput.style.borderColor = '#ef4444';
+            setTimeout(() => {
+                this.elements.textInput.style.borderColor = '';
+            }, 300);
+            return;
+        }
+        
+        console.log('Sending text input:', inputText);
+        
+        // Send command to Python
+        this.sendTextInputCommand(inputText);
+        
+        // Disable input while processing
+        this.elements.textInput.disabled = true;
+        this.elements.textInput.style.opacity = '0.5';
+    }
+
+    sendTextInputCommand(text) {
+        console.log('Sending text input command to Python...');
+        
+        // Create command object
+        const command = {
+            action: 'text_input',
+            text: text,
+            timestamp: Date.now()
+        };
+
+        // Write command to file for Python to read
+        try {
+            fs.writeFileSync(this.commandFile, JSON.stringify(command, null, 2));
+            console.log('Text input command sent:', text);
+        } catch (error) {
+            console.error('Failed to send text input command:', error);
+            // Re-enable input on error
+            this.elements.textInput.disabled = false;
+            this.elements.textInput.style.opacity = '1';
+        }
     }
 
     updateUI() {
@@ -85,26 +185,34 @@ class AIOverlay {
             totalSteps, 
             isComplete, 
             isActive,
-            isVisible 
+            isVisible,
+            isWaitingForInput
         } = this.state;
 
         // Update agent type
         this.elements.agentType.textContent = agentType || 'Create';
 
-        // Update status and task
-        if (isComplete) {
-            this.elements.statusLabel.textContent = 'Status:';
-            this.elements.taskDescription.textContent = 'task complete';
-            this.elements.taskDescription.classList.add('complete');
+        // Update status and task (only if not in input mode)
+        if (!isWaitingForInput) {
+            if (isComplete) {
+                this.elements.statusLabel.textContent = 'Status:';
+                this.elements.taskDescription.textContent = 'task complete';
+                this.elements.taskDescription.classList.add('complete');
+            } else {
+                this.elements.statusLabel.textContent = 'Executing:';
+                this.elements.taskDescription.textContent = taskName || 'initializing';
+                this.elements.taskDescription.classList.remove('complete');
+            }
         } else {
-            this.elements.statusLabel.textContent = 'Executing:';
-            this.elements.taskDescription.textContent = taskName || 'initializing';
-            this.elements.taskDescription.classList.remove('complete');
+            this.elements.statusLabel.textContent = 'Input:';
+            this.elements.taskDescription.textContent = taskName || 'enter your task';
         }
 
         // Update progress counter
         if (isComplete) {
             this.elements.progressCounter.textContent = '✓';
+        } else if (isWaitingForInput) {
+            this.elements.progressCounter.textContent = '0/?';
         } else {
             this.elements.progressCounter.textContent = `${currentStep}/${totalSteps}`;
         }
@@ -117,13 +225,24 @@ class AIOverlay {
 
         // Handle visibility
         this.updateVisibility();
+        
+        // Re-enable input if it was disabled
+        if (this.elements.textInput.disabled) {
+            this.elements.textInput.disabled = false;
+            this.elements.textInput.style.opacity = '1';
+        }
     }
 
     updateProgressBars() {
-        const { currentStep, totalSteps, isComplete } = this.state;
+        const { currentStep, totalSteps, isComplete, isWaitingForInput } = this.state;
         
         // Clear existing bars
         this.elements.progressBars.innerHTML = '';
+        
+        // Don't show progress bars in input mode
+        if (isWaitingForInput) {
+            return;
+        }
         
         // Create bars based on totalSteps
         for (let i = 0; i < totalSteps; i++) {
@@ -141,16 +260,15 @@ class AIOverlay {
     }
 
     updateEnergyOrb() {
-        const { isActive, isComplete } = this.state;
+        const { isActive, isComplete, isWaitingForInput } = this.state;
+        
+        // Clear all state classes first
+        this.elements.energyOrb.classList.remove('active', 'complete');
         
         if (isComplete) {
             this.elements.energyOrb.classList.add('complete');
-            this.elements.energyOrb.classList.remove('active');
-        } else if (isActive) {
+        } else if (isActive || isWaitingForInput) {
             this.elements.energyOrb.classList.add('active');
-            this.elements.energyOrb.classList.remove('complete');
-        } else {
-            this.elements.energyOrb.classList.remove('active', 'complete');
         }
     }
 
@@ -167,7 +285,7 @@ class AIOverlay {
     startPulseAnimation() {
         // Simulate activity pulses
         setInterval(() => {
-            if (!this.state.isComplete) {
+            if (!this.state.isComplete && !this.state.isWaitingForInput) {
                 this.state.isActive = !this.state.isActive;
                 this.updateEnergyOrb();
             }
@@ -211,11 +329,30 @@ class AIOverlay {
             });
         }, 2500);
     }
+
+    // Sound effects using ZzFX
+    playTaskStartSound() {
+        // Sci-fi startup sound
+        try {
+            zzfx(1,.05,220,0.01,0.3,0.1,0,1.5,0,0,0,0,0.1,0,0,0,0.1,0.6,0.02);
+        } catch (e) {
+            console.log('Sound disabled');
+        }
+    }
+
+    playTaskCompleteSound() {
+        // Success completion sound
+        try {
+            zzfx(1,.05,523,0.01,0.2,0.2,0,1.2,0,0,50,0,0,0,0,0,0.1,0.8,0.02);
+        } catch (e) {
+            console.log('Sound disabled');
+        }
+    }
 }
 
 // Initialize the overlay when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new AIOverlay();
+    window.aiOverlay = new AIOverlay();
 });
 
 // Helper function for testing - can be removed in production
