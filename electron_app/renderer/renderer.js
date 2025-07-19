@@ -79,7 +79,12 @@ class AIOverlay {
             (oldTaskName !== this.state.taskName || wasComplete || oldTaskName === 'initializing')
         ) {
             // New task started: either task name changed, or we were completed, or coming from initial state
-            this.playTaskStartSound();
+            // if we're accepting input, don't play the sound
+            if (!this.state.isWaitingForInput) {
+                this.playTaskStartSound();
+            } else {
+                this.playInputSound();
+            }
         }
 
         // Handle input mode transition
@@ -329,21 +334,28 @@ class AIOverlay {
             });
         }, 2500);
     }
-
-    // Sound effects using ZzFX
-    playTaskStartSound() {
-        // Sci-fi startup sound
+    playInputSound() {
+        // Shoot 265 sound
         try {
-            zzfx(1,.05,220,0.01,0.3,0.1,0,1.5,0,0,0,0,0.1,0,0,0,0.1,0.6,0.02);
+            zzfx(...[.1,,191,.03,.18,.19,3,2.8,-3,-5,,,,,,,,.85,.11]);
+        } catch (e) {
+            console.log('Sound disabled');
+        }
+    }
+
+    playTaskStartSound() {
+        // Powerup 6 sound
+        try {
+            zzfx(...[.2,,222,.01,.17,.27,1,2.3,-3,,377,.05,.01,,,,,.99,.28,.43,-774]);
         } catch (e) {
             console.log('Sound disabled');
         }
     }
 
     playTaskCompleteSound() {
-        // Success completion sound
+        // Pickup 216
         try {
-            zzfx(1,.05,523,0.01,0.2,0.2,0,1.2,0,0,50,0,0,0,0,0,0.1,0.8,0.02);
+            zzfx(...[.2,0,635,.02,.04,.2,1,1.9,,,203,.06,.03,,,,,.81,.05]);
         } catch (e) {
             console.log('Sound disabled');
         }

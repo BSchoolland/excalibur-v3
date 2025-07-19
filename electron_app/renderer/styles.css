@@ -43,6 +43,7 @@ body {
     pointer-events: auto; /* Re-enable clicks for the popup itself */
     max-height: calc(100vh - 48px); /* Ensure it fits within viewport with padding */
     max-width: calc(100vw - 48px); /* Ensure it fits within viewport with padding */
+    align-self: flex-end; /* Keep bottom edge aligned */
 }
 
 /* Expanded height for input mode */

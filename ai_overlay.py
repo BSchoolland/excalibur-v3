@@ -87,12 +87,13 @@ class AIOverlay:
             
         print("Starting AI Overlay...")
         try:
-            # Start electron in the background
+            # Start electron in the background with a new process group
             self.electron_process = subprocess.Popen(
                 ["npm", "start"],
                 cwd=self.electron_app_path,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                preexec_fn=os.setsid  # Create new process group
             )
             self.is_running = True
             
@@ -116,12 +117,26 @@ class AIOverlay:
         # Stop command watcher
         self._stop_command_watcher()
         self.hide()
+        
         if self.electron_process:
-            self.electron_process.terminate()
+            print("Terminating electron process")
+            
             try:
-                self.electron_process.wait(timeout=5)
+                # Kill the entire process group to ensure all child processes are terminated
+                os.killpg(os.getpgid(self.electron_process.pid), signal.SIGTERM)
+                self.electron_process.wait(timeout=3)
+                print("Electron process group terminated gracefully")
             except subprocess.TimeoutExpired:
-                self.electron_process.kill()
+                print("Electron process didn't terminate gracefully, killing...")
+                try:
+                    # Force kill the entire process group
+                    os.killpg(os.getpgid(self.electron_process.pid), signal.SIGKILL)
+                    self.electron_process.wait(timeout=2)
+                    print("Electron process group killed")
+                except (subprocess.TimeoutExpired, ProcessLookupError):
+                    print("Warning: Some Electron processes may still be running")
+            except ProcessLookupError:
+                print("Process already terminated")
                 
         self.is_running = False
         
@@ -165,7 +180,6 @@ class AIOverlay:
         Returns:
             The text the user entered
         """
-        print(f"💬 Requesting text input: {prompt}")
         
         # Set up input state
         self._input_response = None
@@ -189,7 +203,6 @@ class AIOverlay:
             time.sleep(0.1)
         
         result = self._input_response or ""
-        print(f"📝 User input received: '{result}'")
         
         # Reset input state
         self.current_state.update({
@@ -282,7 +295,6 @@ class AIOverlay:
             return
             
         self._write_state_file()
-        print(f"📡 Sending update: {self.current_state}")
     
     def _write_state_file(self) -> None:
         """Write current state to JSON file for Electron to read"""
@@ -297,7 +309,6 @@ class AIOverlay:
         self.stop_watching = False
         self.command_watcher_thread = threading.Thread(target=self._watch_commands, daemon=True)
         self.command_watcher_thread.start()
-        print("📡 Started command watcher")
     
     def _stop_command_watcher(self) -> None:
         """Stop watching for commands from the UI"""
@@ -329,7 +340,6 @@ class AIOverlay:
                 command = json.load(f)
             
             action = command.get('action')
-            print(f"🎮 Received command: {action}")
             
             if action == 'close':
                 if self.on_close_requested:
@@ -346,9 +356,7 @@ class AIOverlay:
                 
                 if self.on_text_input_received:
                     self.on_text_input_received(input_text)
-                
-                print(f"📝 Text input received: '{input_text}'")
-            
+                            
             # Clean up command file
             os.remove(self.command_file)
             

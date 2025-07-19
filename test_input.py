@@ -26,11 +26,9 @@ def main():
         time.sleep(2)
         
         # Request user input
-        print("\n💬 Requesting user input...")
         user_task = overlay.request_text_input("Enter task")
         
         if user_task:
-            print(f"✅ User entered: '{user_task}'")
             
             # Show a task based on user input
             overlay.show_task("Create", f"building {user_task}", 4)
@@ -52,11 +50,9 @@ def main():
             time.sleep(2)
             
             # Ask for another input
-            print("\n💬 Requesting second input...")
             user_action = overlay.request_text_input("what would you like to do next?")
             
             if user_action:
-                print(f"✅ User entered: '{user_action}'")
                 overlay.show_task("Execute", f"performing {user_action}", 2)
                 time.sleep(1)
                 
@@ -72,10 +68,9 @@ def main():
         overlay.hide()        
         
     except KeyboardInterrupt:
-        print("\n🔄 Test interrupted")
+        print("\n🔄 Process interrupted")
     finally:
         overlay.stop()
-        print("✅ Test complete!")
 
 if __name__ == "__main__":
     main() 
