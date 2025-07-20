@@ -27,10 +27,13 @@ class AIOverlay {
             agentType: 'Create',
             taskName: 'initializing',
             isWaitingForInput: false,
-            inputPrompt: ''
+            inputPrompt: '',
+            playSound: null,
+            soundTimestamp: 0
         };
 
         this.commandFile = path.join(__dirname, '..', 'overlay_commands.json');
+        this.lastSoundTimestamp = 0;
         this.init();
     }
 
@@ -66,26 +69,14 @@ class AIOverlay {
         const oldCurrentStep = this.state.currentStep;
         const wasWaitingForInput = this.state.isWaitingForInput;
         
+        // Check for sound command before updating state
+        if (newState.playSound && newState.soundTimestamp !== this.lastSoundTimestamp) {
+            this.lastSoundTimestamp = newState.soundTimestamp;
+            this.playSound(newState.playSound);
+        }
+        
         // Update state
         Object.assign(this.state, newState);
-
-        // Play sounds based on state changes
-        if (!wasComplete && this.state.isComplete) {
-            // Task just completed
-            this.playTaskCompleteSound();
-        } else if (
-            this.state.currentStep === 0 && 
-            this.state.taskName !== 'initializing' &&
-            (oldTaskName !== this.state.taskName || wasComplete || oldTaskName === 'initializing')
-        ) {
-            // New task started: either task name changed, or we were completed, or coming from initial state
-            // if we're accepting input, don't play the sound
-            if (!this.state.isWaitingForInput) {
-                this.playTaskStartSound();
-            } else {
-                this.playInputSound();
-            }
-        }
 
         // Handle input mode transition
         if (!wasWaitingForInput && this.state.isWaitingForInput) {
@@ -218,6 +209,8 @@ class AIOverlay {
             this.elements.progressCounter.textContent = '✓';
         } else if (isWaitingForInput) {
             this.elements.progressCounter.textContent = '0/?';
+        } else if (totalSteps === 0) {
+            this.elements.progressCounter.textContent = '';
         } else {
             this.elements.progressCounter.textContent = `${currentStep}/${totalSteps}`;
         }
@@ -244,8 +237,8 @@ class AIOverlay {
         // Clear existing bars
         this.elements.progressBars.innerHTML = '';
         
-        // Don't show progress bars in input mode
-        if (isWaitingForInput) {
+        // Don't show progress bars in input mode or when totalSteps is 0
+        if (isWaitingForInput || totalSteps === 0) {
             return;
         }
         
@@ -265,12 +258,14 @@ class AIOverlay {
     }
 
     updateEnergyOrb() {
-        const { isActive, isComplete, isWaitingForInput } = this.state;
+        const { isActive, isComplete, isWaitingForInput, agentType } = this.state;
         
         // Clear all state classes first
-        this.elements.energyOrb.classList.remove('active', 'complete');
+        this.elements.energyOrb.classList.remove('active', 'complete', 'error');
         
-        if (isComplete) {
+        if (agentType === 'Error') {
+            this.elements.energyOrb.classList.add('error');
+        } else if (isComplete) {
             this.elements.energyOrb.classList.add('complete');
         } else if (isActive || isWaitingForInput) {
             this.elements.energyOrb.classList.add('active');
@@ -334,6 +329,26 @@ class AIOverlay {
             });
         }, 2500);
     }
+    
+    playSound(soundType) {
+        switch (soundType) {
+            case 'input':
+                this.playInputSound();
+                break;
+            case 'task_start':
+                this.playTaskStartSound();
+                break;
+            case 'task_complete':
+                this.playTaskCompleteSound();
+                break;
+            case 'error':
+                this.playErrorSound();
+                break;
+            default:
+                console.log(`Unknown sound type: ${soundType}`);
+        }
+    }
+    
     playInputSound() {
         // Shoot 265 sound
         try {
@@ -356,6 +371,15 @@ class AIOverlay {
         // Pickup 216
         try {
             zzfx(...[.2,0,635,.02,.04,.2,1,1.9,,,203,.06,.03,,,,,.81,.05]);
+        } catch (e) {
+            console.log('Sound disabled');
+        }
+    }
+
+    playErrorSound() {
+        // Pickup 62
+        try {
+            zzfx(...[,,209,.01,.07,.2,1,2.5,2,-23,179,.08,,,,,,.92,.02]);        
         } catch (e) {
             console.log('Sound disabled');
         }

@@ -26,12 +26,12 @@ def main():
         time.sleep(2)
         
         # Request user input
-        user_task = overlay.request_text_input("Enter task")
+        user_task = overlay.request_text_input("Enter task", sound="input")
         
         if user_task:
             
             # Show a task based on user input
-            overlay.show_task("Create", f"building {user_task}", 4)
+            overlay.show_task("Create", f"building {user_task}", 4, sound="task_start")
             time.sleep(1)
             
             overlay.update_step(1, "analyzing requirements")
@@ -46,14 +46,14 @@ def main():
             overlay.update_step(4, "finishing touches")
             time.sleep(2)
             
-            overlay.complete_task()
+            overlay.complete_task(sound="task_complete")
             time.sleep(2)
             
             # Ask for another input
-            user_action = overlay.request_text_input("what would you like to do next?")
+            user_action = overlay.request_text_input("what would you like to do next?", sound="input")
             
             if user_action:
-                overlay.show_task("Execute", f"performing {user_action}", 2)
+                overlay.show_task("Execute", f"performing {user_action}", 2, sound="task_start")
                 time.sleep(1)
                 
                 overlay.update_step(1, "preparing environment")
@@ -62,7 +62,7 @@ def main():
                 overlay.update_step(2, "executing command")
                 time.sleep(2)
                 
-                overlay.complete_task()
+                overlay.complete_task(sound="task_complete")
                 time.sleep(1)
         
         overlay.hide()        

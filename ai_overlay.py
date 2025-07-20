@@ -170,12 +170,13 @@ class AIOverlay:
         """
         self.on_text_input_received = handler
     
-    def request_text_input(self, prompt: str = "enter your task") -> str:
+    def request_text_input(self, prompt: str = "enter your task", sound: str = None) -> str:
         """
         Request text input from the user and wait for response
         
         Args:
             prompt: The prompt to show to the user
+            sound: Optional sound to play ("task_start", "task_complete", "input")
             
         Returns:
             The text the user entered
@@ -185,7 +186,7 @@ class AIOverlay:
         self._input_response = None
         self._waiting_for_input = True
         
-        self.current_state.update({
+        update_data = {
             "isWaitingForInput": True,
             "inputPrompt": prompt,
             "isVisible": True,
@@ -195,7 +196,13 @@ class AIOverlay:
             "currentStep": 0,
             "totalSteps": 1,
             "isComplete": False
-        })
+        }
+        
+        if sound:
+            update_data["playSound"] = sound
+            update_data["soundTimestamp"] = time.time()
+        
+        self.current_state.update(update_data)
         self._send_update()
         
         # Wait for response
@@ -213,7 +220,7 @@ class AIOverlay:
         
         return result
     
-    def show_task(self, agent_type: str, task_name: str, total_steps: int = 3) -> None:
+    def show_task(self, agent_type: str, task_name: str, total_steps: int = 3, sound: str = None) -> None:
         """
         Start showing a new task
         
@@ -221,8 +228,9 @@ class AIOverlay:
             agent_type: Type of agent (e.g., "Create", "Install", "Code", "Execute")
             task_name: Name of the task being performed
             total_steps: Total number of steps in this task
+            sound: Optional sound to play ("task_start", "task_complete", "input")
         """
-        self.current_state.update({
+        update_data = {
             "agentType": agent_type,
             "taskName": task_name,
             "currentStep": 0,
@@ -231,37 +239,116 @@ class AIOverlay:
             "isActive": True,
             "isVisible": True,
             "isWaitingForInput": False
-        })
+        }
+        
+        if sound:
+            update_data["playSound"] = sound
+            update_data["soundTimestamp"] = time.time()
+        
+        self.current_state.update(update_data)
         self._send_update()
         print(f"📋 Started task: {agent_type} - {task_name} ({total_steps} steps)")
     
-    def update_step(self, step_number: int, step_name: str) -> None:
+    def update_step(self, step_number: int, step_name: str, sound: str = None) -> None:
         """
         Update the current step
         
         Args:
             step_number: Current step number (1-based)
             step_name: Description of the current step
+            sound: Optional sound to play ("task_start", "task_complete", "input")
         """
-        self.current_state.update({
+        update_data = {
             "currentStep": step_number,
             "taskName": step_name,
             "isComplete": False,
             "isWaitingForInput": False
-        })
+        }
+        
+        if sound:
+            update_data["playSound"] = sound
+            update_data["soundTimestamp"] = time.time()
+        
+        self.current_state.update(update_data)
         self._send_update()
         print(f"  🔄 Step {step_number}/{self.current_state['totalSteps']}: {step_name}")
     
-    def complete_task(self) -> None:
-        """Mark the current task as complete"""
-        self.current_state.update({
+    def complete_task(self, sound: str = None) -> None:
+        """
+        Mark the current task as complete
+        
+        Args:
+            sound: Optional sound to play ("task_start", "task_complete", "input")
+        """
+        update_data = {
             "isComplete": True,
             "isActive": False,
             "isWaitingForInput": False
-        })
+        }
+        
+        if sound:
+            update_data["playSound"] = sound
+            update_data["soundTimestamp"] = time.time()
+        
+        self.current_state.update(update_data)
         self._send_update()
         print(f"Task completed: {self.current_state['agentType']}")
     
+    def show_error(self, error_message: str, sound: str = None) -> None:
+        """
+        Show an error message to the user
+        
+        Args:
+            error_message: The error message to display
+            sound: Optional sound to play ("task_start", "task_complete", "input")
+        """
+        update_data = {
+            "agentType": "Error",
+            "taskName": error_message,
+            "currentStep": 0,
+            "totalSteps": 0,
+            "isComplete": False,
+            "isActive": True,
+            "isVisible": True,
+            "isWaitingForInput": False
+        }
+        
+        if sound:
+            update_data["playSound"] = sound
+            update_data["soundTimestamp"] = time.time()
+        
+        self.current_state.update(update_data)
+        self._send_update()
+        print(f"Error: {error_message}")
+    
+    def showMessage(self, message: str, agent_type: str = "Excalibur", sound: str = None) -> None:
+        """
+        Show a general message to the user
+        
+        Args:
+            message: The message to display
+            agent_type: Type of agent (defaults to "Excalibur")
+            sound: Optional sound to play ("task_start", "task_complete", "input")
+        """
+        update_data = {
+            "agentType": agent_type,
+            "taskName": message,
+            "currentStep": 0,
+            "totalSteps": 0,
+            "isComplete": False,
+            "isActive": True,
+            "isVisible": True,
+            "isWaitingForInput": False
+        }
+        
+        if sound:
+            update_data["playSound"] = sound
+            update_data["soundTimestamp"] = time.time()
+        
+        self.current_state.update(update_data)
+        self._send_update()
+        print(f"Message: {message}")
+
     def hide(self) -> None:
         """Hide the overlay (slide out)"""
         self.current_state["isVisible"] = False
