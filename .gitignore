@@ -1,2 +1,4 @@
 */node_modules
 */__pycache__
+.env
+vosk-model-small-en-us-0.15.zip

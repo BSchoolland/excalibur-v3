@@ -136,7 +136,7 @@ async def task_loop():
         try:
             if key == keyboard.Key.f13:
                 import time
-                current_time = time.time()
+                curreagentnt_time = time.time()
                 if current_time - last_f13_time < double_tap_threshold:
                     # Double tap detected - toggle mode
                     USE_ACTIVATION_WORD = not USE_ACTIVATION_WORD
