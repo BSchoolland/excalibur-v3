@@ -4,6 +4,8 @@ import subprocess
 import vosk
 import sounddevice as sd
 from ai_overlay import AIOverlay
+from pynput import keyboard
+import asyncio
 
 class TaskInputMode(Enum):
     VOICE = "voice"
@@ -41,6 +43,9 @@ class TaskInput:
         self.isListeningForTask = False
         self.overlay = overlay
         self.isAudioWorking = False # for testing, force text mode
+        self.listener = None
+        self.f13_future = None
+        self.event_loop = None
         if self.isAudioWorking:
             # Initialize Vosk model
             print("Loading Vosk model...")
@@ -64,13 +69,24 @@ class TaskInput:
     def get_mode(self):
         return self.mode
 
-    def wait_for_task(self):
+    async def wait_for_task(self):
         if self.mode == TaskInputMode.VOICE:
             raise NotImplementedError("Voice mode not implemented")
         elif self.mode == TaskInputMode.BUTTON:
             raise NotImplementedError("Button mode not implemented")
         elif self.mode == TaskInputMode.TEXT:
-            return self.wait_for_text()
+            self.event_loop = asyncio.get_event_loop()
+            self._f13_future = self.event_loop.create_future()
+            self.listener = keyboard.Listener(on_press=self.on_press)
+            self.listener.start()
+            await self._f13_future
+            self.listener.stop()
+            return self.overlay.request_text_input("Enter task")
+
+    def on_press(self, key):
+        if key == keyboard.Key.f13 and self._f13_future and not self._f13_future.done():
+            if self.event_loop:
+                self.event_loop.call_soon_threadsafe(self._f13_future.set_result, None)
     
     def wait_for_text(self):
         return self.overlay.request_text_input("Enter task")

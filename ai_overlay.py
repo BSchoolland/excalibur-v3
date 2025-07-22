@@ -205,7 +205,7 @@ class AIOverlay:
         self.current_state.update(update_data)
         self._send_update()
         
-        # Wait for response
+        # Wait for response OR escape key
         while self._waiting_for_input and self.is_running:
             time.sleep(0.1)
         

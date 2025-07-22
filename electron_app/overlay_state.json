@@ -1,1 +1,1 @@
-{"agentType": "Excalibur", "taskName": "Enter task", "currentStep": 0, "totalSteps": 1, "isComplete": false, "isActive": true, "isVisible": true, "isWaitingForInput": true, "inputPrompt": "Enter task", "playSound": "input", "soundTimestamp": 1753149941.1220965}
+{"agentType": "Error", "taskName": "Task not understood", "currentStep": 0, "totalSteps": 0, "isComplete": false, "isActive": true, "isVisible": true, "isWaitingForInput": false, "inputPrompt": "", "playSound": "error", "soundTimestamp": 1753151507.9144537}

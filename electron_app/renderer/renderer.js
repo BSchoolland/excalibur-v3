@@ -59,6 +59,14 @@ class AIOverlay {
             this.elements.textInput.select();
         });
 
+        // Handle escape key to cancel input
+        this.elements.textInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                this.handleEscapeKey();
+            }
+        });
+
         // Start with some basic animations
         this.startPulseAnimation();
     }
@@ -145,6 +153,17 @@ class AIOverlay {
         
         // Send command to Python
         this.sendTextInputCommand(inputText);
+        
+        // Disable input while processing
+        this.elements.textInput.disabled = true;
+        this.elements.textInput.style.opacity = '0.5';
+    }
+
+    handleEscapeKey() {
+        console.log('Escape key pressed - canceling input');
+        
+        // Send empty text input command to indicate cancellation
+        this.sendTextInputCommand('');
         
         // Disable input while processing
         this.elements.textInput.disabled = true;

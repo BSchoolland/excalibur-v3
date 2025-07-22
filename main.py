@@ -12,7 +12,7 @@ running = True
 async def mainloop(overlay: AIOverlay, task_input: TaskInput):
     global running
     while running:
-        user_task = overlay.request_text_input("Enter task", sound="input")
+        user_task = await task_input.wait_for_task()
         print(f"Task: {user_task}")
         if user_task == "" or user_task == "huh":
             overlay.show_error("Task not understood", sound="error")
