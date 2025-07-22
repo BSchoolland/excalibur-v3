@@ -55,6 +55,16 @@ function adjustWindowForInputMode(isInputMode) {
     // Expand window for input mode
     mainWindow.setSize(400, 180);
     mainWindow.setPosition(width - 420, height - 200);
+    
+    // Force window to front and focus when entering input mode
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.moveTop();
+    
+    // On macOS, also try to activate the app
+    if (process.platform === 'darwin') {
+      app.focus({ steal: true });
+    }
   } else {
     // Normal size
     mainWindow.setSize(400, 140);
@@ -148,5 +158,19 @@ app.on('before-quit', () => {
 ipcMain.on('update-status', (event, data) => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('status-update', data);
+  }
+});
+
+// IPC handler for focus requests from renderer
+ipcMain.on('request-focus', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.moveTop();
+    
+    // On macOS, also try to activate the app
+    if (process.platform === 'darwin') {
+      app.focus({ steal: true });
+    }
   }
 }); 

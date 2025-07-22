@@ -34,6 +34,9 @@ async def mainloop(overlay: AIOverlay, task_input: TaskInput):
         else:
             skip_start_notif = True
         await agent.close()
+        overlay.complete_task(sound="task_complete")
+        time.sleep(2)
+        overlay.hide()
         await asyncio.sleep(0.1)
 
 def plan_task(task: str):

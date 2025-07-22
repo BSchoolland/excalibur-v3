@@ -185,8 +185,7 @@ class AIOverlay:
         # Set up input state
         self._input_response = None
         self._waiting_for_input = True
-        
-        update_data = {
+        update_data = { 
             "isWaitingForInput": True,
             "inputPrompt": prompt,
             "isVisible": True,

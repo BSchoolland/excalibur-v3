@@ -43,6 +43,16 @@ class AIOverlay {
             this.updateState(data);
         });
 
+        // Listen for window focus events to ensure input focus
+        window.addEventListener('focus', () => {
+            if (this.state.isWaitingForInput) {
+                setTimeout(() => {
+                    this.elements.textInput.focus();
+                    this.elements.textInput.select();
+                }, 10);
+            }
+        });
+
         // Set up close button
         this.elements.closeButton.addEventListener('click', () => {
             this.sendCloseCommand();
@@ -99,6 +109,9 @@ class AIOverlay {
     enterInputMode() {
         console.log('Entering input mode');
         
+        // Request window focus from main process
+        ipcRenderer.send('request-focus');
+        
         // Add input mode classes
         this.elements.mainContainer.classList.add('input-mode');
         this.elements.energyOrb.classList.add('input-mode');
@@ -109,15 +122,31 @@ class AIOverlay {
         this.elements.inputForm.classList.remove('hidden');
         this.elements.taskInfo.classList.add('hidden');
         
-        // Set placeholder and focus
+        // Clear input and set placeholder
+        this.elements.textInput.value = '';
         if (this.state.inputPrompt) {
             this.elements.textInput.placeholder = this.state.inputPrompt;
         }
         
-        // Focus with a slight delay to ensure visibility
-        setTimeout(() => {
+        // Force focus and selection with multiple attempts
+        const forceFocus = () => {
             this.elements.textInput.focus();
-        }, 100);
+            this.elements.textInput.select();
+            // Additional force focus for stubborn cases
+            this.elements.textInput.setSelectionRange(0, this.elements.textInput.value.length);
+        };
+        
+        // Immediate attempt
+        forceFocus();
+        
+        // Delayed attempt to ensure visibility
+        setTimeout(forceFocus, 50);
+        
+        // Final attempt with longer delay
+        setTimeout(forceFocus, 200);
+        
+        // Extra aggressive attempt after window should be focused
+        setTimeout(forceFocus, 500);
     }
 
     exitInputMode() {
